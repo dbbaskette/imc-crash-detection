@@ -1,0 +1,26 @@
+spring:
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    virtual-host: ${RABBITMQ_VHOST:/}
+    listener:
+      simple:
+        acknowledge-mode: auto
+        retry:
+          enabled: true
+          initial-interval: ${RETRY_INTERVAL:1000}
+          max-attempts: ${RETRY_MAX_ATTEMPTS:3}
+
+telematics:
+  queue-name: ${QUEUE_NAME:telematics_stream}
+
+crash-detection:
+  g-force-threshold: ${G_FORCE_THRESHOLD:4.0}
+  speed-threshold: ${SPEED_THRESHOLD:5.0}
+
+logging:
+  level:
+    com.acme.insurance.telematics: ${LOG_LEVEL:INFO}
+    org.springframework.amqp: WARN

@@ -1,0 +1,17 @@
+spring:
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
+telematics:
+  queue-name: test_telematics_stream
+
+crash-detection:
+  g-force-threshold: 4.0
+  speed-threshold: 5.0
+
+logging:
+  level:
+    com.acme.insurance.telematics: DEBUG

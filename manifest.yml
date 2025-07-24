@@ -1,0 +1,11 @@
+---
+applications:
+- name: telematics-simulator
+  path: target/crash-detection-telematics-1.0.0-SNAPSHOT.jar
+  memory: 512M
+  instances: 1
+  env:
+    SPRING_PROFILES_ACTIVE: cloud
+    JAVA_OPTS: '-Djava.security.egd=file:/dev/./urandom'
+  services:
+    - rabbitmq-service

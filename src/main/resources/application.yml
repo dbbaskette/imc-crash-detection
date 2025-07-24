@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: crash-detection-processor
+  
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    virtual-host: /
+    listener:
+      simple:
+        acknowledge-mode: auto
+        retry:
+          enabled: true
+          initial-interval: 1000
+          max-attempts: 3
+
+telematics:
+  queue-name: telematics_stream
+
+crash-detection:
+  g-force-threshold: 4.0    # G-force threshold for crash detection
+  speed-threshold: 5.0      # Speed threshold for sudden stops (mph)
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+
+logging:
+  level:
+    com.acme.insurance.telematics: INFO
+    org.springframework.amqp: WARN
