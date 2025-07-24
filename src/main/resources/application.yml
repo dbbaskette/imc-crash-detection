@@ -2,26 +2,61 @@ spring:
   application:
     name: crash-detection-processor
   
+  cloud:
+    stream:
+      function:
+        definition: crashDetectionProcessor
+      bindings:
+        crashDetectionProcessor-in-0:
+          destination: telematics_stream
+          group: crash-detection-group
+        crashDetectionProcessor-out-0:
+          destination: crash_reports
+      rabbit:
+        bindings:
+          crashDetectionProcessor-in-0:
+            consumer:
+              acknowledge-mode: auto
+              retry-max-attempts: 3
+              retry-initial-interval: 1000
+  
   rabbitmq:
     host: localhost
     port: 5672
     username: guest
     password: guest
     virtual-host: /
-    listener:
-      simple:
-        acknowledge-mode: auto
-        retry:
-          enabled: true
-          initial-interval: 1000
-          max-attempts: 3
-
-telematics:
-  queue-name: telematics_stream
 
 crash-detection:
-  g-force-threshold: 4.0    # G-force threshold for crash detection
-  speed-threshold: 5.0      # Speed threshold for sudden stops (mph)
+  g-force-threshold: 4.0        # G-force threshold for crash detection
+  speed-threshold: 5.0          # Speed threshold for sudden stops (mph)
+  rollover-threshold: 3.0       # Gyroscope threshold for rollover detection (rad/s)
+  spinning-threshold: 2.0       # Gyroscope Z-axis threshold for spinning detection (rad/s)
+
+spark:
+  app:
+    name: CrashDetectionProcessor
+  master: local[*]
+  sql:
+    adaptive:
+      enabled: true
+      coalescePartitions:
+        enabled: true
+  streaming:
+    trigger:
+      interval: 2 seconds
+  processing:
+    window:
+      duration: 30 seconds
+  storage:
+    enabled: true
+    path: file:///tmp/telemetry-data
+    format: parquet
+    partitioning:
+      enabled: true
+      columns: ["policy_id", "date"]
+    compression: snappy
+    write-mode: append
 
 management:
   endpoints:

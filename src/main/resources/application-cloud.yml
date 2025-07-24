@@ -1,24 +1,57 @@
 spring:
+  cloud:
+    stream:
+      function:
+        definition: crashDetectionProcessor
+      bindings:
+        crashDetectionProcessor-in-0:
+          destination: ${INPUT_QUEUE:telematics_stream}
+          group: ${CONSUMER_GROUP:crash-detection-group}
+        crashDetectionProcessor-out-0:
+          destination: ${OUTPUT_QUEUE:crash_reports}
+      rabbit:
+        bindings:
+          crashDetectionProcessor-in-0:
+            consumer:
+              acknowledge-mode: auto
+              retry-max-attempts: ${RETRY_MAX_ATTEMPTS:3}
+              retry-initial-interval: ${RETRY_INTERVAL:1000}
+  
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USERNAME:guest}
     password: ${RABBITMQ_PASSWORD:guest}
     virtual-host: ${RABBITMQ_VHOST:/}
-    listener:
-      simple:
-        acknowledge-mode: auto
-        retry:
-          enabled: true
-          initial-interval: ${RETRY_INTERVAL:1000}
-          max-attempts: ${RETRY_MAX_ATTEMPTS:3}
-
-telematics:
-  queue-name: ${QUEUE_NAME:telematics_stream}
 
 crash-detection:
   g-force-threshold: ${G_FORCE_THRESHOLD:4.0}
   speed-threshold: ${SPEED_THRESHOLD:5.0}
+
+spark:
+  app:
+    name: ${SPARK_APP_NAME:CrashDetectionProcessor}
+  master: ${SPARK_MASTER:local[*]}
+  sql:
+    adaptive:
+      enabled: ${SPARK_ADAPTIVE_ENABLED:true}
+      coalescePartitions:
+        enabled: ${SPARK_COALESCE_ENABLED:true}
+  streaming:
+    trigger:
+      interval: ${SPARK_TRIGGER_INTERVAL:2 seconds}
+  processing:
+    window:
+      duration: ${SPARK_WINDOW_DURATION:30 seconds}
+  storage:
+    enabled: ${SPARK_STORAGE_ENABLED:true}
+    path: ${SPARK_STORAGE_PATH:hdfs://namenode:9000/telemetry-data}
+    format: ${SPARK_STORAGE_FORMAT:parquet}
+    partitioning:
+      enabled: ${SPARK_PARTITIONING_ENABLED:true}
+      columns: ${SPARK_PARTITION_COLUMNS:["policy_id", "date"]}
+    compression: ${SPARK_COMPRESSION:snappy}
+    write-mode: ${SPARK_WRITE_MODE:append}
 
 logging:
   level:
