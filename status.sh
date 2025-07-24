@@ -10,7 +10,6 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 APP_NAME="crash-detection-telematics"
-PID_FILE=".telematics.pid"
 
 echo -e "${BLUE}🚨 Crash Detection Processor Status${NC}"
 echo -e "${BLUE}====================================${NC}"
@@ -28,11 +27,11 @@ if [ -n "$RUNNING_PIDS" ]; then
         echo -e "${BLUE}💾 Memory usage: $MEM_USAGE${NC}"
     done
     
-    # Show recent log entries if log file exists
-    if [ -f "telematics.log" ]; then
-        echo -e "\n${YELLOW}📝 Recent log entries (last 5 lines):${NC}"
-        tail -5 telematics.log
-    fi
+    # Show process details
+    for pid in $RUNNING_PIDS; do
+        echo -e "${BLUE}📊 Process details for PID $pid:${NC}"
+        ps -o pid,ppid,user,state,start,time,command -p $pid 2>/dev/null || echo "  No details available"
+    done
     
 else
     echo -e "${RED}❌ Crash detection processor is not running${NC}"
@@ -46,17 +45,16 @@ else
     echo -e "${RED}❌ RabbitMQ is not accessible on localhost:5672${NC}"
 fi
 
-# Check for PID file
-if [ -f "$PID_FILE" ]; then
-    STORED_PID=$(cat "$PID_FILE")
-    if kill -0 "$STORED_PID" 2>/dev/null; then
-        echo -e "${BLUE}📄 PID file matches running process: $STORED_PID${NC}"
-    else
-        echo -e "${YELLOW}⚠️  Stale PID file found (process $STORED_PID not running)${NC}"
-    fi
+# Show connection status
+echo -e "\n${YELLOW}📡 Connection Status:${NC}"
+if [ -n "$RUNNING_PIDS" ]; then
+    echo -e "${GREEN}✅ Application is actively listening for telematics messages${NC}"
+    echo -e "${BLUE}📋 To see real-time crash detection, watch the running application terminal${NC}"
+else
+    echo -e "${YELLOW}ℹ️  No active crash detection processor found${NC}"
 fi
 
 echo -e "\n${YELLOW}💡 Commands:${NC}"
-echo -e "  Start:  ./run-local.sh"
-echo -e "  Stop:   ./run-local.sh --clean"
-echo -e "  Logs:   tail -f telematics.log"
+echo -e "  Start:  ./run-local.sh    (logs stream to terminal)"
+echo -e "  Stop:   ./run-local.sh --clean (or Ctrl+C in running terminal)"
+echo -e "  Status: ./status.sh"

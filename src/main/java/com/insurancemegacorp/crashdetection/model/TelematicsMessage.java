@@ -1,4 +1,4 @@
-package com.acme.insurance.telematics.model;
+package com.insurancemegacorp.crashdetection.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;

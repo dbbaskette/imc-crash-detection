@@ -34,5 +34,5 @@ management:
 
 logging:
   level:
-    com.acme.insurance.telematics: INFO
+    com.insurancemegacorp.crashdetection: INFO
     org.springframework.amqp: WARN

@@ -1,4 +1,4 @@
-package com.acme.insurance.telematics.config;
+package com.insurancemegacorp.crashdetection.config;
 
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.QueueBuilder;

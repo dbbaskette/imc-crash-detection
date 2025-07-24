@@ -1,4 +1,4 @@
-package com.acme.insurance.telematics;
+package com.insurancemegacorp.crashdetection;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

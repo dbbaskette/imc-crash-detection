@@ -7,7 +7,6 @@ set -e
 
 APP_NAME="crash-detection-telematics"
 JAR_FILE="target/${APP_NAME}-1.0.0-SNAPSHOT.jar"
-PID_FILE=".telematics.pid"
 
 # Colors for output
 RED='\033[0;31m'
@@ -42,11 +41,6 @@ stop_existing_processes() {
         echo -e "${GREEN}✅ All existing processes stopped${NC}"
     else
         echo -e "${GREEN}✅ No existing processes found${NC}"
-    fi
-    
-    # Clean up PID file
-    if [ -f "$PID_FILE" ]; then
-        rm -f "$PID_FILE"
     fi
 }
 
@@ -84,29 +78,16 @@ start_application() {
         exit 1
     fi
     
-    # Start the application in background
-    nohup java -jar "$JAR_FILE" > telematics.log 2>&1 &
-    APP_PID=$!
-    
-    # Save PID
-    echo $APP_PID > "$PID_FILE"
-    
-    echo -e "${GREEN}✅ Application started with PID: $APP_PID${NC}"
+    echo -e "${GREEN}✅ Application starting...${NC}"
     echo -e "${BLUE}👂 Listening to queue: telematics_stream${NC}"
     echo -e "${BLUE}🔍 G-force threshold: 4.0g${NC}"
     echo -e "${BLUE}⚡ Speed threshold: 5.0 mph${NC}"
     echo -e "${BLUE}🚨 Crash detection: ACTIVE${NC}"
+    echo -e "${YELLOW}🛑 Press Ctrl+C to stop${NC}"
+    echo -e "${BLUE}===========================================${NC}"
     
-    # Wait a moment and check if it's still running
-    sleep 3
-    if ! kill -0 $APP_PID 2>/dev/null; then
-        echo -e "${RED}❌ Application failed to start. Check telematics.log for details.${NC}"
-        exit 1
-    fi
-    
-    echo -e "${GREEN}🎉 Crash detection processor is running!${NC}"
-    echo -e "${YELLOW}📝 View logs: tail -f telematics.log${NC}"
-    echo -e "${YELLOW}🛑 Stop with: kill $APP_PID or ./run-telematics.sh --clean${NC}"
+    # Start the application in foreground (streaming logs)
+    java -jar "$JAR_FILE"
 }
 
 show_usage() {

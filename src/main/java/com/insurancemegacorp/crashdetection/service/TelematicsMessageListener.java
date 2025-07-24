@@ -1,6 +1,6 @@
-package com.acme.insurance.telematics.service;
+package com.insurancemegacorp.crashdetection.service;
 
-import com.acme.insurance.telematics.model.TelematicsMessage;
+import com.insurancemegacorp.crashdetection.model.TelematicsMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;

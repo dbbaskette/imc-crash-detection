@@ -14,4 +14,4 @@ crash-detection:
 
 logging:
   level:
-    com.acme.insurance.telematics: DEBUG
+    com.insurancemegacorp.crashdetection: DEBUG

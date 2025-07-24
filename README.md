@@ -17,7 +17,7 @@ A Spring Boot application that consumes vehicle telematics data from RabbitMQ an
 ### Normal Driving Data
 ```json
 {
-  "policy_id": "ACME-AUTO-98765",
+  "policy_id": "IMC-AUTO-98765",
   "timestamp": "2024-07-24T18:30:45.123Z",
   "speed_mph": 32.5,
   "sensors": {
@@ -38,7 +38,7 @@ A Spring Boot application that consumes vehicle telematics data from RabbitMQ an
 ### Crash Event Data
 ```json
 {
-  "policy_id": "ACME-AUTO-98765",
+  "policy_id": "IMC-AUTO-98765",
   "timestamp": "2024-07-24T18:31:47.890Z",
   "speed_mph": 35.0,
   "sensors": {
@@ -65,13 +65,13 @@ A Spring Boot application that consumes vehicle telematics data from RabbitMQ an
 
 ### Quick Start with Management Scripts
 ```bash
-# Start the crash detection processor (automatically stops old instances, builds, and starts new one)
+# Start the crash detection processor (streams logs to terminal)
 ./run-local.sh
 
-# Check status
+# Check status (in another terminal)
 ./status.sh
 
-# Stop all instances
+# Stop the processor (Ctrl+C in running terminal, or)
 ./run-local.sh --clean
 ```
 
@@ -79,6 +79,8 @@ A Spring Boot application that consumes vehicle telematics data from RabbitMQ an
 ```bash
 mvn spring-boot:run
 ```
+
+**Note**: The application streams logs directly to the terminal, so you'll see real-time crash detection alerts as they happen. Use Ctrl+C to stop the application.
 
 ## Running on Cloud Foundry
 

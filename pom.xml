@@ -10,7 +10,7 @@
         <relativePath/>
     </parent>
     
-    <groupId>com.acme.insurance</groupId>
+    <groupId>com.insurancemegacorp.crashdetection</groupId>
     <artifactId>crash-detection-telematics</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <name>crash-detection-telematics</name>

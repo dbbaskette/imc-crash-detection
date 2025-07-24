@@ -22,5 +22,5 @@ crash-detection:
 
 logging:
   level:
-    com.acme.insurance.telematics: ${LOG_LEVEL:INFO}
+    com.insurancemegacorp.crashdetection: ${LOG_LEVEL:INFO}
     org.springframework.amqp: WARN

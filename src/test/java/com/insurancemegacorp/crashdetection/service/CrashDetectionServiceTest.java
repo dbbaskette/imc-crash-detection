@@ -1,9 +1,9 @@
-package com.acme.insurance.telematics.service;
+package com.insurancemegacorp.crashdetection.service;
 
-import com.acme.insurance.telematics.model.AccelerometerData;
-import com.acme.insurance.telematics.model.GpsData;
-import com.acme.insurance.telematics.model.Sensors;
-import com.acme.insurance.telematics.model.TelematicsMessage;
+import com.insurancemegacorp.crashdetection.model.AccelerometerData;
+import com.insurancemegacorp.crashdetection.model.GpsData;
+import com.insurancemegacorp.crashdetection.model.Sensors;
+import com.insurancemegacorp.crashdetection.model.TelematicsMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
