@@ -30,7 +30,14 @@ public class SparkConfig {
                 .set("spark.sql.adaptive.coalescePartitions.enabled", String.valueOf(coalescePartitionsEnabled))
                 .set("spark.sql.streaming.checkpointLocation", "/tmp/spark-checkpoint")
                 .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-                .set("spark.sql.streaming.forceDeleteTempCheckpointLocation", "true");
+                .set("spark.sql.streaming.forceDeleteTempCheckpointLocation", "true")
+                // Disable Spark UI and metrics to avoid servlet dependencies and Java 21 issues
+                .set("spark.ui.enabled", "false")
+                .set("spark.metrics.enabled", "false")
+                .set("spark.eventLog.enabled", "false")
+                // Disable other unnecessary components for headless operation  
+                .set("spark.sql.ui.retainedExecutions", "1")
+                .set("spark.sql.execution.arrow.pyspark.enabled", "false");
     }
 
     @Bean

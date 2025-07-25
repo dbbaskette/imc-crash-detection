@@ -24,7 +24,7 @@ public class CrashDetectionService {
     private double spinningThreshold;
     
     public boolean isCrashEvent(TelematicsMessage message) {
-        double gForce = message.gForce(); // Use pre-calculated G-force
+        double gForce = message.gForce();
         double lateralGForce = message.lateralGForce();
         double verticalGForce = message.verticalGForce();
         double speed = message.speedMph();
@@ -71,6 +71,8 @@ public class CrashDetectionService {
     }
     
     public String determineCrashType(TelematicsMessage message) {
+        double gForce = message.gForce();
+        
         if (message.indicatesRollover()) {
             return "ROLLOVER";
         } else if (message.indicatesSpinning()) {
@@ -79,9 +81,9 @@ public class CrashDetectionService {
             return "SIDE_IMPACT";
         } else if (message.verticalGForce() >= 2.0) {
             return "VERTICAL_IMPACT";
-        } else if (message.speedMph() <= speedThreshold && message.gForce() >= 2.0) {
+        } else if (message.speedMph() <= speedThreshold && gForce >= 2.0) {
             return "SUDDEN_STOP";
-        } else if (message.gForce() >= gForceThreshold) {
+        } else if (gForce >= gForceThreshold) {
             return "HIGH_G_FORCE";
         } else {
             return "UNKNOWN";
@@ -107,9 +109,11 @@ public class CrashDetectionService {
             message.sensors().gps().bearing() != null ? String.format("%.1f", message.sensors().gps().bearing()) : "N/A",
             message.sensors().magnetometer().getCardinalDirection());
         logger.warn("Speed: {} mph", message.speedMph());
-        logger.warn("Total G-Force: {}g", String.format("%.2f", message.gForce()));
-        logger.warn("Lateral G-Force: {}g", String.format("%.2f", message.lateralGForce()));
-        logger.warn("Vertical G-Force: {}g", String.format("%.2f", message.verticalGForce()));
+        
+        logger.warn("Total G-Force: {}g", String.format("%.3f", message.gForce()));
+        
+        logger.warn("Lateral G-Force: {}g", String.format("%.3f", message.lateralGForce()));
+        logger.warn("Vertical G-Force: {}g", String.format("%.3f", message.verticalGForce()));
         
         logger.warn("Sensor Data:");
         logger.warn("  Accelerometer: X={}, Y={}, Z={}", 

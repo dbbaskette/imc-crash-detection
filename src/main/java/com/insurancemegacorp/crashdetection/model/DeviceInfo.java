@@ -3,19 +3,19 @@ package com.insurancemegacorp.crashdetection.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public record DeviceInfo(
-    @JsonProperty("battery_level") Double batteryLevel, // Now as decimal (0.0-1.0)
+    @JsonProperty("battery_level") Double batteryLevel, // As percentage (0-100)
     @JsonProperty("signal_strength") Integer signalStrength,
-    @JsonProperty("orientation") String orientation,
+    @JsonProperty("device_orientation") String orientation,
     @JsonProperty("screen_on") Boolean screenOn,
     @JsonProperty("charging") Boolean charging
 ) {
     
     public boolean isLowBattery() {
-        return batteryLevel != null && batteryLevel < 0.20; // Below 20%
+        return batteryLevel != null && batteryLevel < 20.0; // Below 20%
     }
     
     public boolean isCriticalBattery() {
-        return batteryLevel != null && batteryLevel < 0.10; // Below 10%
+        return batteryLevel != null && batteryLevel < 10.0; // Below 10%
     }
     
     public boolean isWeakSignal() {
@@ -39,7 +39,7 @@ public record DeviceInfo(
     }
     
     public int getBatteryPercentage() {
-        return batteryLevel != null ? (int) Math.round(batteryLevel * 100) : 0;
+        return batteryLevel != null ? batteryLevel.intValue() : 0;
     }
     
     public String getDeviceHealthStatus() {

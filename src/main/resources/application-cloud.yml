@@ -6,7 +6,7 @@ spring:
       bindings:
         crashDetectionProcessor-in-0:
           destination: ${INPUT_QUEUE:telematics_stream}
-          group: ${CONSUMER_GROUP:crash-detection-group}
+          # No consumer group - read directly from queue
         crashDetectionProcessor-out-0:
           destination: ${OUTPUT_QUEUE:crash_reports}
       rabbit:
@@ -23,6 +23,29 @@ spring:
     username: ${RABBITMQ_USERNAME:guest}
     password: ${RABBITMQ_PASSWORD:guest}
     virtual-host: ${RABBITMQ_VHOST:/}
+    connection-timeout: ${RABBITMQ_CONNECTION_TIMEOUT:60000}
+    requested-heartbeat: ${RABBITMQ_HEARTBEAT:60}
+    connection-recovery-interval: ${RABBITMQ_RECOVERY_INTERVAL:5000}
+    publisher-confirms: ${RABBITMQ_PUBLISHER_CONFIRMS:true}
+    publisher-returns: ${RABBITMQ_PUBLISHER_RETURNS:true}
+    cache:
+      channel:
+        size: ${RABBITMQ_CHANNEL_CACHE_SIZE:25}
+      connection:
+        mode: ${RABBITMQ_CONNECTION_MODE:channel}
+    listener:
+      simple:
+        retry:
+          enabled: ${RABBITMQ_RETRY_ENABLED:true}
+          initial-interval: ${RABBITMQ_RETRY_INITIAL:2000}
+          max-attempts: ${RABBITMQ_RETRY_MAX_ATTEMPTS:10}
+          max-interval: ${RABBITMQ_RETRY_MAX_INTERVAL:30000}
+          multiplier: ${RABBITMQ_RETRY_MULTIPLIER:2.0}
+        acknowledge-mode: auto
+        prefetch: ${RABBITMQ_PREFETCH:1}
+    startup:
+      max-wait-time: ${RABBITMQ_STARTUP_MAX_WAIT:300}
+      check-interval: ${RABBITMQ_STARTUP_CHECK_INTERVAL:5}
 
 crash-detection:
   g-force-threshold: ${G_FORCE_THRESHOLD:4.0}

@@ -3,14 +3,14 @@ package com.insurancemegacorp.crashdetection.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public record GpsData(
-    @JsonProperty("latitude") double latitude,
-    @JsonProperty("longitude") double longitude,
+    @JsonProperty("lat") double latitude,
+    @JsonProperty("lon") double longitude,
     @JsonProperty("altitude") Double altitude,
-    @JsonProperty("speed_ms") Double speedMs,
+    @JsonProperty("speed") Double speedMs,
     @JsonProperty("bearing") Double bearing,
     @JsonProperty("accuracy") Double accuracy,
     @JsonProperty("satellite_count") Integer satelliteCount,
-    @JsonProperty("gps_fix_time") String gpsFixTime
+    @JsonProperty("fix_time") String gpsFixTime
 ) {
     
     public double getSpeedMph() {

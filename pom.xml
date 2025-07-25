@@ -70,6 +70,13 @@
             <version>${spark.version}</version>
         </dependency>
         
+        <!-- Servlet API for Spark compatibility (javax.servlet, not jakarta) -->
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <version>4.0.1</version>
+        </dependency>
+        
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>

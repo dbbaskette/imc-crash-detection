@@ -87,7 +87,7 @@ public record CrashReport(
                                                    double riskScore, 
                                                    double totalGForce) {
         
-        String reportId = generateReportId(message.policyId(), Instant.parse(message.timestamp()));
+        String reportId = generateReportId(message.policyId(), parseTimestamp(message.timestamp()));
         String severityLevel = determineSeverityLevel(message.gForce(), totalGForce, riskScore);
         boolean emergencyRecommended = riskScore >= 0.8 || message.gForce() >= 6.0;
         
@@ -165,6 +165,24 @@ public record CrashReport(
             totalGForce,
             Instant.now()
         );
+    }
+    
+    private static Instant parseTimestamp(String timestamp) {
+        try {
+            // Try parsing as ISO-8601 format first
+            return Instant.parse(timestamp);
+        } catch (Exception e) {
+            try {
+                // Try parsing as Unix timestamp with nanoseconds
+                double timestampSeconds = Double.parseDouble(timestamp);
+                long seconds = (long) timestampSeconds;
+                long nanos = (long) ((timestampSeconds - seconds) * 1_000_000_000);
+                return Instant.ofEpochSecond(seconds, nanos);
+            } catch (Exception ex) {
+                // If both fail, return current time as fallback
+                return Instant.now();
+            }
+        }
     }
     
     private static String generateReportId(String policyId, Instant timestamp) {

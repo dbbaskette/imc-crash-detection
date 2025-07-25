@@ -1,7 +1,10 @@
 package com.insurancemegacorp.crashdetection.service;
 
 import com.insurancemegacorp.crashdetection.model.AccelerometerData;
+import com.insurancemegacorp.crashdetection.model.DeviceInfo;
 import com.insurancemegacorp.crashdetection.model.GpsData;
+import com.insurancemegacorp.crashdetection.model.GyroscopeData;
+import com.insurancemegacorp.crashdetection.model.MagnetometerData;
 import com.insurancemegacorp.crashdetection.model.Sensors;
 import com.insurancemegacorp.crashdetection.model.TelematicsMessage;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,9 +61,12 @@ class CrashDetectionServiceTest {
     }
     
     private TelematicsMessage createMessage(String policyId, double speed, double accelX, double accelY, double accelZ, double gForce) {
-        GpsData gps = new GpsData(40.7128, -74.0060);
+        GpsData gps = new GpsData(40.7128, -74.0060, 0.0, 15.0, 45.0, 5.0, 8, "2024-07-24T10:30:00Z");
         AccelerometerData accelerometer = new AccelerometerData(accelX, accelY, accelZ);
-        Sensors sensors = new Sensors(gps, accelerometer);
-        return new TelematicsMessage(policyId, "2024-07-24T10:30:00Z", speed, sensors, gForce);
+        GyroscopeData gyroscope = new GyroscopeData(0.0, 0.0, 0.0);
+        MagnetometerData magnetometer = new MagnetometerData(23.0, -12.0, 45.0, 45.0);
+        DeviceInfo device = new DeviceInfo(0.85, -65, "portrait", true, false);
+        Sensors sensors = new Sensors(gps, accelerometer, gyroscope, magnetometer, 1013.25, device);
+        return new TelematicsMessage(policyId, "VIN123456789", "2024-07-24T10:30:00Z", speed, "Main St", gForce, sensors);
     }
 }

@@ -13,13 +13,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.context.annotation.Bean;
+import java.util.function.Function;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.function.Function;
+import java.util.concurrent.atomic.AtomicLong;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static org.apache.spark.sql.functions.*;
 
@@ -51,6 +53,8 @@ public class SparkCrashProcessor {
 
     private final ConcurrentLinkedQueue<TelematicsMessage> messageBuffer = new ConcurrentLinkedQueue<>();
     private volatile boolean isProcessing = false;
+    private final AtomicLong processedMessageCount = new AtomicLong(0);
+    private final AtomicLong lastLogTime = new AtomicLong(System.currentTimeMillis());
 
     @PostConstruct
     public void initializeSparkTempView() {
@@ -96,21 +100,104 @@ public class SparkCrashProcessor {
             }, DataTypes.StringType);
             
         logger.info("🔧 Enhanced Spark UDFs registered for multi-sensor crash detection");
+        logger.info("🚨 Crash detection active - Threshold: {}g (To test: send message with g_force >= {})", 
+            gForceThreshold, gForceThreshold);
     }
 
     @Bean
-    public Function<TelematicsMessage, TelematicsMessage> crashDetectionProcessor() {
+    public Function<TelematicsMessage, CrashReport> crashDetectionProcessor() {
         return telematicsMessage -> {
-            // Add message to buffer for batch processing
-            messageBuffer.offer(telematicsMessage);
-            
-            // Trigger batch processing when buffer reaches threshold or time interval
-            if (messageBuffer.size() >= 10 || !isProcessing) {
-                processBatchWithSpark();
+            try {
+                // Increment processed message counter
+                long count = processedMessageCount.incrementAndGet();
+                
+                // Log periodic status every 100 messages
+                long currentTime = System.currentTimeMillis();
+                if (count % 100 == 0 || (currentTime - lastLogTime.get()) > 30000) { // Every 100 messages or 30 seconds
+                    logger.info("📊 Processed {} telemetry messages - System operational", count);
+                    lastLogTime.set(currentTime);
+                }
+                
+                logger.debug("Processing telemetrics message for policy: {}, VIN: {}", 
+                    telematicsMessage.policyId(), telematicsMessage.vin());
+                
+                // Store all telemetry data (crash and normal)
+                writeSingleTelemetryMessage(telematicsMessage);
+                
+                // Check if this is a crash event
+                boolean isCrash = crashDetectionService.isCrashEvent(telematicsMessage);
+                
+                if (isCrash) {
+                    // MASSIVE CRASH ALERT - Make it impossible to miss!
+                    logger.error("");
+                    logger.error("🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨");
+                    logger.error("🚨                         VEHICLE CRASH DETECTED!                          🚨");
+                    logger.error("🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨");
+                    logger.error("🚑 EMERGENCY RESPONSE REQUIRED - Policy: {}, VIN: {}", 
+                        telematicsMessage.policyId(), telematicsMessage.vin());
+                    
+                    // Generate crash report with proper parameters
+                    String crashType = crashDetectionService.determineCrashType(telematicsMessage);
+                    double riskScore = calculateRiskScore(telematicsMessage);
+                    CrashReport crashReport = CrashReport.fromTelematicsMessage(
+                        telematicsMessage, crashType, riskScore, telematicsMessage.gForce());
+                    
+                    logger.error("🚨 CRASH TYPE: {} | G-FORCE: {}g | RISK SCORE: {}", 
+                        crashType, String.format("%.2f", telematicsMessage.gForce()), String.format("%.1f", riskScore));
+                    logger.error("📍 LOCATION: {} at {}, {}", 
+                        telematicsMessage.currentStreet(),
+                        telematicsMessage.sensors().gps().latitude(), 
+                        telematicsMessage.sensors().gps().longitude());
+                    logger.error("🚨 CRASH REPORT ID: {} - PUBLISHING TO EMERGENCY QUEUE", crashReport.reportId());
+                    logger.error("🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨");
+                    logger.error("");
+                    
+                    // Process through detailed crash logging
+                    crashDetectionService.processCrashEvent(telematicsMessage);
+                    
+                    return crashReport; // This will be sent to the output binding
+                } else {
+                    logger.debug("Normal telemetry - Policy: {}, G-Force: {}g", 
+                        telematicsMessage.policyId(), String.format("%.2f", telematicsMessage.gForce()));
+                    return null; // No output for normal telemetry
+                }
+            } catch (Exception e) {
+                logger.error("Error processing telematics message for policy: {}, VIN: {}: {}", 
+                    telematicsMessage.policyId(), telematicsMessage.vin(), e.getMessage(), e);
+                return null;
             }
-            
-            return telematicsMessage;
         };
+    }
+    
+    private double calculateRiskScore(TelematicsMessage message) {
+        double baseScore = message.gForce() * 10; // Base score from G-force
+        
+        // Adjust based on crash type
+        if (message.indicatesRollover()) baseScore *= 1.5;
+        if (message.indicatesSpinning()) baseScore *= 1.3;
+        if (message.lateralGForce() >= 3.0) baseScore *= 1.2;
+        if (message.verticalGForce() >= 2.0) baseScore *= 1.1;
+        
+        // Environmental factors
+        if (message.sensors().barometricPressure() != null) {
+            if (message.sensors().indicatesWeatherEvent()) baseScore *= 1.2;
+            if (message.sensors().isAtHighAltitude()) baseScore *= 1.1;
+        }
+        
+        // Device health factors
+        if (message.sensors().device() != null) {
+            if (message.sensors().device().isLowBattery()) baseScore *= 0.9;
+            if (message.sensors().device().isWeakSignal()) baseScore *= 0.9;
+        }
+        
+        return Math.min(baseScore, 100.0); // Cap at 100
+    }
+    
+    private void writeSingleTelemetryMessage(TelematicsMessage message) {
+        // TODO: Temporarily disabled telemetry storage to focus on core message processing
+        // We'll implement a simpler storage approach later that doesn't fight with Spark serialization
+        logger.trace("Processed telemetry for policy: {}, G-Force: {}g", 
+            message.policyId(), String.format("%.2f", message.gForce()));
     }
 
     private synchronized void processBatchWithSpark() {
@@ -132,7 +219,7 @@ public class SparkCrashProcessor {
                 return;
             }
             
-            logger.info("🚀 Processing Spark batch with {} messages", batch.size());
+            logger.info("⚡ Spark processing batch with {} messages", batch.size());
             
             // Create Spark Dataset from batch
             Dataset<TelematicsMessage> telematicsDF = sparkSession
@@ -198,9 +285,11 @@ public class SparkCrashProcessor {
             Dataset<Row> crashEvents = enrichedData.filter(col("is_crash").equalTo(true));
             
             long crashCount = crashEvents.count();
-            logger.info("🚨 Found {} crash events in batch", crashCount);
             
             if (crashCount > 0) {
+                logger.error("");
+                logger.error("⚡⚡⚡ SPARK CRASH ANALYSIS: {} CRASH EVENTS DETECTED IN BATCH ⚡⚡⚡", crashCount);
+                logger.error("");
                 // Use Spark to create enriched crash reports
                 List<CrashReport> crashReports = generateCrashReportsWithSpark(crashEvents, batch);
                 
@@ -276,13 +365,14 @@ public class SparkCrashProcessor {
                 """);
                 
             Dataset<Row> crashPatterns = sparkSession.sql(sqlQuery);
+            long riskEventCount = crashPatterns.count();
             
-            logger.info("📊 Spark SQL analysis found {} potential incidents", crashPatterns.count());
-            
-            // Show top risk events
-            if (crashPatterns.count() > 0) {
-                logger.info("🔍 Top risk events identified by Spark SQL:");
+            if (riskEventCount > 0) {
+                logger.warn("📊 Spark SQL identified {} HIGH-RISK EVENTS", riskEventCount);
+                logger.warn("🔍 Risk analysis summary:");
                 crashPatterns.show(5, false);
+            } else {
+                logger.debug("📊 Spark SQL analysis: No high-risk events detected");
             }
             
         } catch (Exception e) {
@@ -397,12 +487,15 @@ public class SparkCrashProcessor {
             logger.info("📤 Publishing {} crash reports to crash_reports queue", crashReports.size());
             
             for (CrashReport crashReport : crashReports) {
-                boolean sent = streamBridge.send("crashDetectionProcessor-out-0", crashReport);
-                
-                if (sent) {
-                    logger.info("✅ Published crash report: {} to queue", crashReport.reportId());
-                } else {
-                    logger.error("❌ Failed to publish crash report: {} to queue", crashReport.reportId());
+                try {
+                    boolean sent = streamBridge.send("crashDetectionProcessor-out-0", crashReport);
+                    if (sent) {
+                        logger.info("✅ Published crash report: {} to queue", crashReport.reportId());
+                    } else {
+                        logger.error("❌ Failed to publish crash report: {} to queue", crashReport.reportId());
+                    }
+                } catch (Exception ex) {
+                    logger.error("❌ Failed to publish crash report: {} to queue: {}", crashReport.reportId(), ex.getMessage());
                 }
             }
             

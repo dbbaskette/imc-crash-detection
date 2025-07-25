@@ -1,6 +1,8 @@
 spring:
   application:
     name: crash-detection-processor
+  main:
+    web-application-type: none
   
   cloud:
     stream:
@@ -8,17 +10,15 @@ spring:
         definition: crashDetectionProcessor
       bindings:
         crashDetectionProcessor-in-0:
-          destination: telematics_stream
+          destination: telematics_work_queue
+          content-type: application/json
           group: crash-detection-group
+          consumer:
+            max-attempts: 3
+            back-off-initial-interval: 1000
         crashDetectionProcessor-out-0:
           destination: crash_reports
-      rabbit:
-        bindings:
-          crashDetectionProcessor-in-0:
-            consumer:
-              acknowledge-mode: auto
-              retry-max-attempts: 3
-              retry-initial-interval: 1000
+          content-type: application/json
   
   rabbitmq:
     host: localhost
@@ -26,6 +26,29 @@ spring:
     username: guest
     password: guest
     virtual-host: /
+    connection-timeout: 60000      # 60 seconds for initial connection
+    requested-heartbeat: 60        # Heartbeat interval in seconds
+    connection-recovery-interval: 5000  # 5 seconds between recovery attempts
+    publisher-confirms: true
+    publisher-returns: true
+    cache:
+      channel:
+        size: 25
+      connection:
+        mode: channel
+    listener:
+      simple:
+        retry:
+          enabled: true
+          initial-interval: 2000   # 2 seconds initial retry
+          max-attempts: 10         # More attempts for startup
+          max-interval: 30000      # Max 30 seconds between retries
+          multiplier: 2.0          # Exponential backoff
+        acknowledge-mode: auto
+        prefetch: 1
+  startup:
+    max-wait-time: 300              # Maximum time to wait for RabbitMQ (seconds)
+    check-interval: 5               # Interval between connection checks (seconds)
 
 crash-detection:
   g-force-threshold: 4.0        # G-force threshold for crash detection

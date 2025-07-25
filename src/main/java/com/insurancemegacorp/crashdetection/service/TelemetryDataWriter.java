@@ -11,6 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import jakarta.annotation.PostConstruct;
+
 import java.util.List;
 
 import static org.apache.spark.sql.functions.*;
@@ -40,6 +42,13 @@ public class TelemetryDataWriter {
 
     @Value("${spark.storage.write-mode:append}")
     private String writeMode;
+    
+    @PostConstruct
+    public void initializeDataWriter() {
+        if (storageEnabled) {
+            logDataWritesSummary();
+        }
+    }
 
     public void writeTelemetryData(Dataset<TelematicsMessage> telematicsDataset) {
         if (!storageEnabled) {
@@ -49,26 +58,36 @@ public class TelemetryDataWriter {
 
         try {
             logger.info("💾 Writing telemetry data to {} in {} format", storagePath, storageFormat);
-
+            
+            // Show what data we're writing
+            logger.info("📊 Data schema being written:");
+            telematicsDataset.printSchema();
+            
             // Convert to Dataset<Row> and add partitioning columns
             Dataset<Row> enrichedData = telematicsDataset.toDF()
                     .withColumn("date", 
                         date_format(
-                            to_timestamp(col("timestamp"), "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"), 
+                            to_timestamp(col("timestamp"), "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'"), 
                             "yyyy-MM-dd"))
                     .withColumn("hour", 
                         date_format(
-                            to_timestamp(col("timestamp"), "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"), 
+                            to_timestamp(col("timestamp"), "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'"), 
                             "HH"))
                     .withColumn("year", 
                         date_format(
-                            to_timestamp(col("timestamp"), "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"), 
+                            to_timestamp(col("timestamp"), "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'"), 
                             "yyyy"))
                     .withColumn("month", 
                         date_format(
-                            to_timestamp(col("timestamp"), "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"), 
+                            to_timestamp(col("timestamp"), "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'"), 
                             "MM"))
                     .withColumn("processed_timestamp", current_timestamp());
+            
+            logger.info("📋 Final data schema with partitioning columns:");
+            enrichedData.printSchema();
+            
+            logger.info("📈 Sample data being written:");
+            enrichedData.show(3, false);
 
             // Configure the writer
             var writer = enrichedData.write()
@@ -102,6 +121,18 @@ public class TelemetryDataWriter {
 
             long recordCount = enrichedData.count();
             logger.info("✅ Successfully wrote {} telemetry records to {}", recordCount, storagePath);
+            
+            // Log what columns were written
+            String[] columns = enrichedData.columns();
+            logger.info("📝 Written columns ({}): {}", columns.length, String.join(", ", columns));
+            
+            // Show a few sample records to verify all data is preserved
+            logger.info("🔍 Sample written records:");
+            enrichedData.select("policy_id", "vin", "current_street", "g_force", "speed_mph", 
+                              "sensors.gps.latitude", "sensors.gps.longitude", "sensors.gps.accuracy",
+                              "sensors.gyroscope.pitch", "sensors.gyroscope.roll", "sensors.gyroscope.yaw",
+                              "sensors.device.battery_level", "date", "hour")
+                      .show(5, false);
 
             // Log storage statistics
             logStorageStatistics(enrichedData);
@@ -217,5 +248,23 @@ public class TelemetryDataWriter {
 
     public String getStorageFormat() {
         return storageFormat;
+    }
+    
+    public void logDataWritesSummary() {
+        logger.info("📊 HDFS/Filesystem Data Writing Summary:");
+        logger.info("🗂️  ALL telemetry data is written, including:");
+        logger.info("   📋 Basic Fields: policy_id, vin, timestamp, speed_mph, current_street, g_force");
+        logger.info("   📍 GPS Data: latitude, longitude, altitude, speed_ms, bearing, accuracy, satellite_count, gps_fix_time");
+        logger.info("   📏 Accelerometer: x, y, z (raw acceleration data)");
+        logger.info("   🔄 Gyroscope: pitch, roll, yaw (angular velocity)");
+        logger.info("   🧭 Magnetometer: x, y, z, heading (magnetic field and compass)");
+        logger.info("   🌡️  Environmental: barometric_pressure");
+        logger.info("   📱 Device: battery_level, signal_strength, orientation, screen_on, charging");
+        logger.info("   ⏰ Partitioning: year, month, date, hour (for efficient querying)");
+        logger.info("   🕐 Processing: processed_timestamp");
+        logger.info("");
+        logger.info("📂 File Structure: {}/policy_id=XXX/year=YYYY/month=MM/date=YYYY-MM-DD/", storagePath);
+        logger.info("💾 Format: {} with {} compression", storageFormat, compressionCodec);
+        logger.info("🔍 Note: Partitioning columns organize files but ALL original data is preserved!");
     }
 }

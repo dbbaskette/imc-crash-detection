@@ -3,9 +3,9 @@ package com.insurancemegacorp.crashdetection.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public record GyroscopeData(
-    @JsonProperty("pitch") double pitch,
-    @JsonProperty("roll") double roll,
-    @JsonProperty("yaw") double yaw
+    @JsonProperty("x") double pitch,
+    @JsonProperty("y") double roll,
+    @JsonProperty("z") double yaw
 ) {
     
     public double getMagnitude() {
