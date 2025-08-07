@@ -13,12 +13,12 @@ This updated approach champions a "best-of-breed" architecture, strategically po
 
 ```mermaid
 graph TD
-    A[Vehicle Telemetry Stream] --> B(RabbitMQ / Kafka<br/>Message Queue)
-    B --> C(Apache Spark<br/>Stream Processor & Ingest)
-    C -- "Raw Data Archiving" --> D[Data Lake<br/>HDFS / S3 (Parquet)]
-    C -- "Critical Event Alerts" --> E(Greenplum Database<br/>`accident_events` Table)
+    A[Vehicle Telemetry Stream] --> B(RabbitMQ / Kafka Message Queue)
+    B --> C(Apache Spark Stream Processor & Ingest)
+    C -- "Raw Data Archiving" --> D[Data Lake HDFS / S3 (Parquet)]
+    C -- "Critical Event Alerts" --> E(Greenplum Database `accident_events` Table)
     D -- Data Ingestion & ML --> E
-    E --> F[Smart Driver Score<br/>Risk & Reward Decisions]
+    E --> F[Smart Driver Score Risk & Reward Decisions]
 ```
 
 ### Key Architectural Components:
