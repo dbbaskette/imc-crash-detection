@@ -23,4 +23,7 @@ target/
 .mvn/
 
 # IDE
-.idea/
+.idea/release.sh
+.release-exec
+release.sh
+*.pid
