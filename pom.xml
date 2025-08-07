@@ -12,7 +12,7 @@
     
     <groupId>com.insurancemegacorp.crashdetection</groupId>
     <artifactId>crash-detection-telematics</artifactId>
-    <version>0.1.1</version>
+    <version>0.1.2</version>
     <name>crash-detection-telematics</name>
     <description>Vehicle telematics simulator for crash detection demo</description>
     
