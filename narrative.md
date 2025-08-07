@@ -15,8 +15,8 @@ This updated approach champions a "best-of-breed" architecture, strategically po
 graph TD
     A[Vehicle Telemetry Stream] --> B(RabbitMQ / Kafka<br/>Message Queue)
     B --> C(Apache Spark<br/>Stream Processor & Ingest)
-    C -- Raw Data Archiving --> D[Data Lake<br/>HDFS / S3 (Parquet)]
-    C -- Critical Event Alerts --> E(Greenplum Database<br/>`accident_events` Table)
+    C -- "Raw Data Archiving" --> D[Data Lake<br/>HDFS / S3 (Parquet)]
+    C -- "Critical Event Alerts" --> E(Greenplum Database<br/>`accident_events` Table)
     D -- Data Ingestion & ML --> E
     E --> F[Smart Driver Score<br/>Risk & Reward Decisions]
 ```

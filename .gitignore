@@ -27,3 +27,8 @@ target/
 .release-exec
 release.sh
 *.pid
+
+# Cursor related files
+.claude/
+.vscode/
+CLAUDE.md
